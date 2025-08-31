@@ -2,7 +2,7 @@
 // IMPORTACIONES DE FIREBASE
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // =================================================================================
@@ -10,27 +10,40 @@ import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, dele
 // =================================================================================
 
 // --- URL Pública de la Aplicación ---
-// Esta es la URL pública donde se alojará la aplicación.
-// Los códigos QR generados apuntarán a esta dirección.
 const PUBLIC_APP_URL = "https://911apruebadefuego.github.io/";
 
 // --- Configuración de Firebase ---
-// Estas variables se obtienen del entorno donde se ejecuta la app.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id-bomberos-jm';
+// IMPORTANTE: REEMPLAZA ESTE BLOQUE con el objeto de configuración que copiaste 
+// desde tu Consola de Firebase.
+const firebaseConfig = {
+  apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
+  authDomain: "bomberos-jm-fichas.firebaseapp.com",
+  projectId: "bomberos-jm-fichas",
+  storageBucket: "bomberos-jm-fichas.appspot.com",
+  messagingSenderId: "847464331656",
+  appId: "1:847464331656:web:961de4993430f86e2ce23d"
+};
+
+// Este es un identificador único para tu aplicación dentro de la base de datos. Puedes dejarlo así.
+const appId = 'bomberos-jesus-maria-qr';
 
 let db, auth;
 let bomberosCollectionRef;
 
 try {
+    // Verifica que las claves no sean las de ejemplo
+    if (firebaseConfig.apiKey === "TU_API_KEY_AQUI") {
+        throw new Error("Las claves de Firebase no han sido configuradas.");
+    }
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    bomberosCollectionRef = collection(db, `artifacts/${appId}/public/data/bomberos`);
+    // La ruta de la base de datos ahora es más simple para una app pública
+    bomberosCollectionRef = collection(db, `bomberos-data`);
 } catch (e) {
     console.error("Error crítico inicializando Firebase:", e);
     const adminPanel = document.getElementById('admin-panel');
-    adminPanel.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. La aplicación no puede funcionar.</p></div>`;
+    adminPanel.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. La aplicación no puede funcionar. Revisa que las claves en script.js sean correctas y no las de ejemplo.</p></div>`;
     adminPanel.classList.remove('hidden');
 }
 
@@ -146,7 +159,7 @@ bomberoForm.addEventListener('submit', async (e) => {
 
     try {
         if (id) {
-            await setDoc(doc(db, `artifacts/${appId}/public/data/bomberos`, id), bombero);
+            await setDoc(doc(db, "bomberos-data", id), bombero);
             showNotification('¡Datos actualizados correctamente!');
         } else {
             await addDoc(bomberosCollectionRef, bombero);
@@ -167,7 +180,7 @@ bomberosListContainer.addEventListener('click', async (e) => {
     const id = target.dataset.id;
     if (!id) return;
     
-    const bomberoDocRef = doc(db, `artifacts/${appId}/public/data/bomberos`, id);
+    const bomberoDocRef = doc(db, "bomberos-data", id);
 
     if (target.classList.contains('delete-btn')) {
          if (await confirmAction('¿Estás seguro de que quieres borrar a este integrante? Esta acción es irreversible.')) {
@@ -191,10 +204,6 @@ bomberosListContainer.addEventListener('click', async (e) => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } else if (target.classList.contains('generate-qr-btn')) {
-        if (PUBLIC_APP_URL.includes("YOUR_APP_URL_HERE")) {
-            showNotification("¡Atención! Debe configurar la URL pública para que los QR funcionen.", true);
-            return; 
-        }
         const nombre = target.dataset.nombre;
         const url = `${PUBLIC_APP_URL.split('?')[0]}?id=${id}`;
         const qrcodeContainer = document.getElementById('qrcode');
@@ -213,7 +222,7 @@ const router = async () => {
     const bomberoId = params.get('id');
     if (bomberoId) {
         try {
-            const docRef = doc(db, `artifacts/${appId}/public/data/bomberos`, bomberoId);
+            const docRef = doc(db, "bomberos-data", bomberoId);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) renderFicha(docSnap.data());
             else {
@@ -234,11 +243,7 @@ const router = async () => {
 const main = async () => {
     if (!db || !auth) return;
     try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
         router();
     } catch (error) {
         console.error("Error de autenticación:", error);
@@ -248,3 +253,5 @@ const main = async () => {
 };
 
 main();
+
+
