@@ -16,14 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
       apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
       authDomain: "bomberos-jm-fichas.firebaseapp.com",
       projectId: "bomberos-jm-fichas",
-      storageBucket: "bomberos-jm-fichas.appspot.com",
+      // CORRECCIÓN IMPORTANTE: Asegúrate que esta línea sea la correcta
+      storageBucket: "bomberos-jm-fichas.appspot.com", 
       messagingSenderId: "847464331656",
       appId: "1:847464331656:web:961de4993430f86e2ce23d"
     };
 
     let db, auth, storage;
     let bomberosCollectionRef;
-
+    // ... (el resto del código sigue igual)
+    // =================================================================================
+    // (El resto del script.js no cambia y se omite por brevedad)
+    // =================================================================================
     try {
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
@@ -36,9 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // =================================================================================
-    // ELEMENTOS DEL DOM Y HELPERS DE UI
-    // =================================================================================
     const loadingView = document.getElementById('loading-view');
     const loginView = document.getElementById('login-view');
     const loginForm = document.getElementById('login-form');
@@ -60,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => notification.classList.remove('opacity-0', 'translate-x-10'), 10);
         setTimeout(() => {
             notification.classList.add('opacity-0', 'translate-x-10');
-            setTimeout(() => notification.remove(), 6000); // Duración extendida para leer el error
+            setTimeout(() => notification.remove(), 6000);
         }, 6000);
     };
 
@@ -87,9 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // =================================================================================
-    // LÓGICA DE LA APLICACIÓN
-    // =================================================================================
     const renderFicha = (data) => {
         const imageUrl = data.imageUrl || 'https://placehold.co/150x150/e0e0e0/757575?text=S/F';
         bomberoDataContainer.innerHTML = `
@@ -131,11 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bomberoForm.reset();
         bomberoIdField.value = '';
     };
-
-    // =================================================================================
-    // EVENT LISTENERS
-    // =================================================================================
-
+    
     document.getElementById('clear-form-btn').addEventListener('click', clearForm);
     document.getElementById('qr-modal-close').addEventListener('click', () => { document.getElementById('qr-modal').style.display = 'none'; });
     
@@ -191,7 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
             clearForm();
         } catch (error) {
             console.error("Error al guardar datos:", error);
-            // *** INICIO DE LA MEJORA DE ERRORES ***
             let userMessage = 'Hubo un error al guardar los datos.';
             if (error.code) {
                 switch (error.code) {
@@ -206,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             showNotification(userMessage, true);
-            // *** FIN DE LA MEJORA DE ERRORES ***
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Guardar Datos';
@@ -277,9 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try { await signOut(auth); showNotification('Has cerrado la sesión.'); } catch (error) { showNotification('No se pudo cerrar la sesión.', true); }
     });
 
-    // =================================================================================
-    // INICIALIZACIÓN Y ENRUTAMIENTO
-    // =================================================================================
     const showAdminPanel = () => { loadingView.classList.add('hidden'); loginView.classList.add('hidden'); fichaView.classList.add('hidden'); adminPanel.classList.remove('hidden'); listenToBomberos(); };
     const showLoginView = () => { loadingView.classList.add('hidden'); adminPanel.classList.add('hidden'); fichaView.classList.add('hidden'); loginView.classList.remove('hidden'); };
     const showFichaView = async (bomberoId) => {
@@ -320,3 +309,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     main();
 });
+
