@@ -3,147 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ficha Médica QR - Bomberos JM</title>
+    <title>Ficha Médica QR - Bomberos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👨‍🚒</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
-    <div id="app-container" class="container mx-auto p-4 md:p-8">
-        
-        <!-- Vista de Login -->
-        <div id="login-view" class="hidden min-h-screen flex items-center justify-center">
-            <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg -mt-20">
-                <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Acceso de Administración</h2>
-                <p class="text-center text-gray-500 mb-6">Inicia sesión para gestionar los datos.</p>
-                <form id="login-form">
-                    <div class="mb-4">
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div class="mb-6">
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                        <input type="password" id="password" name="password" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                        Ingresar
-                    </button>
-                </form>
-            </div>
-        </div>
 
-        <!-- Vista del Panel de Administración -->
-        <div id="admin-panel" class="hidden">
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mb-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Panel de Administración</h2>
-                    <button id="logout-btn" class="text-sm font-medium text-red-600 hover:text-red-800 hover:underline transition-colors">Cerrar Sesión</button>
-                </div>
-                <form id="bombero-form">
-                    <input type="hidden" id="bombero-id">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="md:col-span-2">
-                            <label for="nombreCompleto" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                            <input type="text" id="nombreCompleto" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label for="dni" class="block text-sm font-medium text-gray-700">DNI</label>
-                            <input type="text" id="dni" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label for="fechaNacimiento" class="block text-sm font-medium text-gray-700">Fecha de Nacimiento</label>
-                            <input type="date" id="fechaNacimiento" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div>
-                            <label for="grupoSanguineo" class="block text-sm font-medium text-gray-700">Grupo Sanguíneo y Factor</label>
-                            <input type="text" id="grupoSanguineo" placeholder="Ej: A+" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="alergias" class="block text-sm font-medium text-gray-700">Alergias Conocidas</label>
-                            <input type="text" id="alergias" placeholder="Ej: Penicilina, Ibuprofeno" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="medicamentos" class="block text-sm font-medium text-gray-700">Medicación Actual</label>
-                            <input type="text" id="medicamentos" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="enfermedadesCronicas" class="block text-sm font-medium text-gray-700">Enfermedades Crónicas</label>
-                            <input type="text" id="enfermedadesCronicas" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-                        <div class="md:col-span-2 border-t pt-4">
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Contacto de Emergencia</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label for="contactoNombre" class="block text-sm font-medium text-gray-700">Nombre</label>
-                                    <input type="text" id="contactoNombre" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label for="contactoParentesco" class="block text-sm font-medium text-gray-700">Parentesco</label>
-                                    <input type="text" id="contactoParentesco" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label for="contactoTelefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
-                                    <input type="tel" id="contactoTelefono" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="observaciones" class="block text-sm font-medium text-gray-700">Observaciones Adicionales</label>
-                            <textarea id="observaciones" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                        </div>
-                    </div>
-                    <div class="flex justify-end mt-6 space-x-4">
-                        <button type="button" id="clear-form-btn" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Limpiar</button>
-                        <button type="submit" class="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Guardar Datos</button>
-                    </div>
-                </form>
-            </div>
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Integrantes del Cuartel</h3>
-                <div id="loading-list" class="text-center p-4">Cargando...</div>
-                <div id="bomberos-list" class="overflow-x-auto"></div>
-            </div>
+    <!-- Vista de Carga Inicial -->
+    <div id="loading-view" class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <svg class="animate-spin h-8 w-8 text-red-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-lg font-semibold text-gray-600">Cargando aplicación...</p>
         </div>
-
-        <!-- Vista de la Ficha Individual (para el QR) -->
-        <div id="ficha-view" class="hidden">
-            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg max-w-4xl mx-auto">
-                <div class="flex items-center justify-between border-b pb-4 mb-4">
-                     <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Ficha Médica de Emergencia</h2>
-                     <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                </div>
-                <div id="bombero-data"></div>
-            </div>
-        </div>
-        
     </div>
 
-    <!-- Modals (QR, Confirmación) -->
-    <div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="bg-white p-8 rounded-2xl shadow-lg text-center relative">
-            <button onclick="document.getElementById('qr-modal').style.display='none'" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">&times;</button>
-            <h3 id="qr-title" class="text-xl font-bold mb-4"></h3>
+    <!-- Vista de Login (oculta por defecto) -->
+    <div id="login-view" class="hidden min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Acceso de Administración</h1>
+                <p class="text-gray-500 mt-2">Ingresa tus credenciales para gestionar las fichas.</p>
+            </div>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300 disabled:bg-gray-400">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel de Administración (oculto por defecto) -->
+    <div id="admin-panel" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Gestión de Fichas Médicas</h1>
+            <button id="logout-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors">Cerrar Sesión</button>
+        </header>
+
+        <!-- Formulario de carga/edición -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Cargar o Editar Integrante</h2>
+            <form id="bombero-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <input type="hidden" id="bombero-id">
+
+                <!-- Campos del formulario -->
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="nombreCompleto" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="nombreCompleto" required class="form-input">
+                </div>
+                
+                <div>
+                    <label for="dni" class="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+                    <input type="text" id="dni" required class="form-input">
+                </div>
+                
+                <div>
+                    <label for="fechaNacimiento" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                    <input type="date" id="fechaNacimiento" class="form-input">
+                </div>
+                
+                <div>
+                    <label for="grupoSanguineo" class="block text-sm font-medium text-gray-700 mb-1">Grupo Sanguíneo y Factor</label>
+                    <input type="text" id="grupoSanguineo" placeholder="Ej: A+" class="form-input">
+                </div>
+                
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="fotoPerfil" class="block text-sm font-medium text-gray-700 mb-1">Foto de Perfil</label>
+                    <input type="file" id="fotoPerfil" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100">
+                    <p class="text-xs text-gray-500 mt-1">Si edita un integrante y no sube una nueva foto, se conservará la anterior.</p>
+                </div>
+
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="alergias" class="block text-sm font-medium text-gray-700 mb-1">Alergias Conocidas</label>
+                    <textarea id="alergias" rows="2" class="form-input" placeholder="Medicamentos, alimentos, etc."></textarea>
+                </div>
+
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="medicamentos" class="block text-sm font-medium text-gray-700 mb-1">Medicación Actual</label>
+                    <textarea id="medicamentos" rows="2" class="form-input" placeholder="Nombre de la medicación y dosis"></textarea>
+                </div>
+
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="enfermedadesCronicas" class="block text-sm font-medium text-gray-700 mb-1">Enfermedades Crónicas</label>
+                    <textarea id="enfermedadesCronicas" rows="2" class="form-input" placeholder="Hipertensión, diabetes, asma, etc."></textarea>
+                </div>
+
+                <h3 class="md:col-span-2 lg:col-span-3 text-lg font-semibold text-gray-600 mt-4 border-b pb-2">Contacto de Emergencia</h3>
+                
+                <div>
+                    <label for="contactoNombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Contacto</label>
+                    <input type="text" id="contactoNombre" class="form-input">
+                </div>
+                
+                <div>
+                    <label for="contactoParentesco" class="block text-sm font-medium text-gray-700 mb-1">Parentesco</label>
+                    <input type="text" id="contactoParentesco" class="form-input">
+                </div>
+                
+                <div>
+                    <label for="contactoTelefono" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                    <input type="tel" id="contactoTelefono" class="form-input">
+                </div>
+                
+                <div class="md:col-span-2 lg:col-span-3">
+                    <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">Observaciones Adicionales</label>
+                    <textarea id="observaciones" rows="3" class="form-input" placeholder="Cualquier otra información relevante"></textarea>
+                </div>
+                
+                <div class="md:col-span-2 lg:col-span-3 flex justify-end items-center gap-4 mt-4">
+                    <button type="button" id="clear-form-btn" class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors">Limpiar</button>
+                    <button type="submit" class="bg-red-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300 disabled:bg-gray-400">Guardar Datos</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de integrantes -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+             <h2 class="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">Integrantes del Cuartel</h2>
+             <div id="loading-list" class="text-center p-4">Cargando lista...</div>
+             <div id="bomberos-list" class="overflow-x-auto"></div>
+        </div>
+    </div>
+
+    <!-- Vista de Ficha Médica (para QR) -->
+    <div id="ficha-view" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl w-full max-w-3xl animate-fade-in">
+             <div class="text-center mb-4 border-b-2 border-red-600 pb-4">
+                <h1 class="text-3xl md:text-4xl font-bold text-red-700">FICHA MÉDICA DE EMERGENCIA</h1>
+            </div>
+            <!-- Contenedor para los datos -->
+            <div id="bombero-data">
+                 <div class="text-center p-8">Cargando datos...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-xl text-center animate-fade-in">
+            <h3 id="qr-title" class="text-2xl font-bold mb-4"></h3>
             <div id="qrcode" class="flex justify-center"></div>
-            <p class="mt-4 text-sm text-gray-500">Escanee este código para ver la ficha.</p>
+            <p class="mt-4 text-sm text-gray-600">Escanee este código para acceder a la ficha.</p>
+            <button id="qr-modal-close" class="mt-6 bg-red-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-red-700">Cerrar</button>
         </div>
     </div>
 
-    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
-            <p id="confirm-message" class="text-gray-800 text-lg mb-4"></p>
-            <div class="flex justify-end space-x-2">
-                <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Cancelar</button>
-                <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirmar</button>
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 mb-2">Confirmar Acción</h3>
+            <p id="confirm-message" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-cancel-btn" class="bg-gray-200 text-gray-800 py-2 px-6 rounded-lg font-semibold hover:bg-gray-300">Cancelar</button>
+                <button id="confirm-ok-btn" class="bg-red-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-red-700">Confirmar</button>
             </div>
         </div>
     </div>
-    
-    <!-- Area de Notificaciones -->
-    <div id="notification-area" class="fixed bottom-5 right-5 w-80 z-50"></div>
 
+    <!-- Área de Notificaciones -->
+    <div id="notification-area" class="fixed bottom-5 right-5 z-50"></div>
+    
     <script type="module" src="script.js"></script>
 </body>
 </html>
+

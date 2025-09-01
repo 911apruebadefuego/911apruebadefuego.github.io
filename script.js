@@ -4,19 +4,14 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-// Se espera a que el DOM esté completamente cargado para ejecutar cualquier código.
-// Esto previene errores de "timing" y páginas en blanco.
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================================
     // CONFIGURACIÓN PRINCIPAL DE LA APP
     // =================================================================================
-
-    // --- URL Pública de la Aplicación ---
     const PUBLIC_APP_URL = "https://911apruebadefuego.github.io/";
-
-    // --- Configuración de Firebase ---
     const firebaseConfig = {
       apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
       authDomain: "bomberos-jm-fichas.firebaseapp.com",
@@ -26,23 +21,25 @@ document.addEventListener('DOMContentLoaded', () => {
       appId: "1:847464331656:web:961de4993430f86e2ce23d"
     };
 
-    let db, auth;
+    let db, auth, storage;
     let bomberosCollectionRef;
 
     try {
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
+        storage = getStorage(app);
         bomberosCollectionRef = collection(db, `bomberos-data`);
     } catch (e) {
         console.error("Error crítico inicializando Firebase:", e);
-        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. La aplicación no puede funcionar. Revisa que las claves en script.js sean correctas.</p></div>`;
-        return; // Detiene la ejecución si Firebase falla
+        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. Revisa las claves en script.js.</p></div>`;
+        return;
     }
 
     // =================================================================================
     // ELEMENTOS DEL DOM Y HELPERS DE UI
     // =================================================================================
+    const loadingView = document.getElementById('loading-view');
     const loginView = document.getElementById('login-view');
     const loginForm = document.getElementById('login-form');
     const adminPanel = document.getElementById('admin-panel');
@@ -94,18 +91,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // LÓGICA DE LA APLICACIÓN
     // =================================================================================
     const renderFicha = (data) => {
-        const fields = [
-            { label: 'Nombre Completo', value: data.nombreCompleto, bold: true, full: true },
-            { label: 'DNI', value: data.dni },
-            { label: 'Fecha de Nacimiento', value: data.fechaNacimiento ? new Date(data.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-AR') : 'No especificada' },
-            { label: 'Grupo Sanguíneo', value: data.grupoSanguineo, important: true },
-            { label: 'Alergias', value: data.alergias || 'Ninguna conocida', important: true, full: true },
-            { label: 'Enfermedades Crónicas', value: data.enfermedadesCronicas || 'Ninguna conocida', full: true },
-            { label: 'Medicación Actual', value: data.medicamentos || 'Ninguna', full: true },
-            { label: 'Contacto de Emergencia', value: `${data.contactoNombre || 'N/A'} (${data.contactoParentesco || 'N/A'}) - ${data.contactoTelefono || 'N/A'}`, full: true },
-            { label: 'Observaciones', value: data.observaciones || 'Sin observaciones', full: true },
-        ];
-        bomberoDataContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">${fields.map(field => `<div class="py-3 border-b border-gray-200 ${field.full ? 'md:col-span-2' : ''}"><p class="text-sm font-medium text-gray-500">${field.label}</p><p class="text-lg ${field.bold ? 'font-bold' : ''} ${field.important ? 'text-red-600 font-semibold' : 'text-gray-900'}">${field.value || 'No especificado'}</p></div>`).join('')}</div>`;
+        const imageUrl = data.imageUrl || 'https://placehold.co/150x150/e0e0e0/757575?text=S/F';
+        bomberoDataContainer.innerHTML = `
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6">
+                <img src="${imageUrl}" alt="Foto de ${data.nombreCompleto}" class="w-36 h-36 rounded-full object-cover border-4 border-white shadow-lg">
+                <div class="text-center md:text-left">
+                    <h2 class="text-2xl font-bold text-gray-800">${data.nombreCompleto}</h2>
+                    <p class="text-gray-600">DNI: ${data.dni || 'No especificado'}</p>
+                    <p class="text-gray-600">Nacimiento: ${data.fechaNacimiento ? new Date(data.fechaNacimiento + 'T00:00:00').toLocaleDateString('es-AR') : 'No especificada'}</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Grupo Sanguíneo</p><p class="text-xl text-red-600 font-semibold">${data.grupoSanguineo || 'No especificado'}</p></div>
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Alergias</p><p class="text-lg text-red-600 font-semibold">${data.alergias || 'Ninguna conocida'}</p></div>
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Enfermedades Crónicas</p><p class="text-lg">${data.enfermedadesCronicas || 'Ninguna conocida'}</p></div>
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Medicación Actual</p><p class="text-lg">${data.medicamentos || 'Ninguna'}</p></div>
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Contacto de Emergencia</p><p class="text-lg">${data.contactoNombre || 'N/A'} (${data.contactoParentesco || 'N/A'}) - ${data.contactoTelefono || 'N/A'}</p></div>
+                <div class="py-3 border-b border-gray-200 md:col-span-2"><p class="text-sm font-medium text-gray-500">Observaciones</p><p class="text-lg">${data.observaciones || 'Sin observaciones'}</p></div>
+            </div>
+        `;
     };
 
     const listenToBomberos = () => {
@@ -116,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const bomberos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            bomberosListContainer.innerHTML = `<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DNI</th><th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">${bomberos.map(b => `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${b.nombreCompleto}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${b.dni}</td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2"><button data-id="${b.id}" data-nombre="${b.nombreCompleto}" class="generate-qr-btn text-indigo-600 hover:text-indigo-900">QR</button><button data-id="${b.id}" class="edit-btn text-green-600 hover:text-green-900">Editar</button><button data-id="${b.id}" class="delete-btn text-red-600 hover:text-red-900">Borrar</button></td></tr>`).join('')}</tbody></table>`;
+            bomberosListContainer.innerHTML = `<table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Foto</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DNI</th><th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">${bomberos.map(b => `<tr><td class="px-4 py-2"><img src="${b.imageUrl || 'https://placehold.co/48x48/e0e0e0/757575?text=S/F'}" alt="Foto de ${b.nombreCompleto}" class="w-12 h-12 rounded-full object-cover"></td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${b.nombreCompleto}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${b.dni}</td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2"><button data-id="${b.id}" data-nombre="${b.nombreCompleto}" class="generate-qr-btn text-indigo-600 hover:text-indigo-900">QR</button><button data-id="${b.id}" class="edit-btn text-green-600 hover:text-green-900">Editar</button><button data-id="${b.id}" class="delete-btn text-red-600 hover:text-red-900">Borrar</button></td></tr>`).join('')}</tbody></table>`;
         }, (error) => {
             console.error("Error al escuchar cambios en bomberos: ", error);
             showNotification("Error al cargar la lista de integrantes.", true);
@@ -133,10 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // =================================================================================
 
     document.getElementById('clear-form-btn').addEventListener('click', clearForm);
-
-    document.getElementById('qr-modal-close').addEventListener('click', () => {
-        document.getElementById('qr-modal').style.display = 'none';
-    });
+    document.getElementById('qr-modal-close').addEventListener('click', () => { document.getElementById('qr-modal').style.display = 'none'; });
     
     bomberoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -145,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.textContent = 'Guardando...';
 
         const id = bomberoIdField.value;
-        const bombero = {
+        const fotoFile = document.getElementById('fotoPerfil').files[0];
+        const bomberoData = {
             nombreCompleto: document.getElementById('nombreCompleto').value.trim(),
             dni: document.getElementById('dni').value.trim(),
             fechaNacimiento: document.getElementById('fechaNacimiento').value,
@@ -160,13 +162,32 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
+            let docRef;
+            let oldImageUrl = null;
+
             if (id) {
-                await setDoc(doc(db, "bomberos-data", id), bombero);
-                showNotification('¡Datos actualizados correctamente!');
+                docRef = doc(db, "bomberos-data", id);
+                const oldDocSnap = await getDoc(docRef);
+                if (oldDocSnap.exists()) { oldImageUrl = oldDocSnap.data().imageUrl || null; }
             } else {
-                await addDoc(bomberosCollectionRef, bombero);
-                showNotification('¡Integrante guardado correctamente!');
+                docRef = doc(bomberosCollectionRef);
             }
+
+            if (fotoFile) {
+                const imagePath = `profile_images/${docRef.id}/${fotoFile.name}`;
+                const storageRef = ref(storage, imagePath);
+                const snapshot = await uploadBytes(storageRef, fotoFile);
+                bomberoData.imageUrl = await getDownloadURL(snapshot.ref);
+
+                if (oldImageUrl && oldImageUrl !== bomberoData.imageUrl) {
+                    try { await deleteObject(ref(storage, oldImageUrl)); } catch (err) { console.warn("No se pudo borrar la imagen anterior:", err); }
+                }
+            } else if (id) {
+                bomberoData.imageUrl = oldImageUrl;
+            }
+
+            await setDoc(docRef, bomberoData);
+            showNotification('¡Datos guardados correctamente!');
             clearForm();
         } catch (error) {
             console.error("Error al guardar datos:", error);
@@ -185,8 +206,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const bomberoDocRef = doc(db, "bomberos-data", id);
 
         if (target.classList.contains('delete-btn')) {
-             if (await confirmAction('¿Estás seguro de que quieres borrar a este integrante? Esta acción es irreversible.')) {
+             if (await confirmAction('¿Estás seguro? Se borrarán los datos y la foto de perfil.')) {
                 try {
+                    const docSnap = await getDoc(bomberoDocRef);
+                    if (docSnap.exists() && docSnap.data().imageUrl) {
+                        await deleteObject(ref(storage, docSnap.data().imageUrl));
+                    }
                     await deleteDoc(bomberoDocRef);
                     showNotification('Integrante borrado.');
                 } catch (error) {
@@ -223,11 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const submitButton = loginForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Ingresando...';
-
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
-            console.error("Error al iniciar sesión:", error);
             showNotification('Error: Email o contraseña incorrectos.', true);
         } finally {
             submitButton.disabled = false;
@@ -236,32 +259,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     logoutBtn.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            showNotification('Has cerrado la sesión.');
-        } catch (error) {
-            console.error("Error al cerrar sesión:", error);
-            showNotification('No se pudo cerrar la sesión.', true);
-        }
+        try { await signOut(auth); showNotification('Has cerrado la sesión.'); } catch (error) { showNotification('No se pudo cerrar la sesión.', true); }
     });
 
     // =================================================================================
     // INICIALIZACIÓN Y ENRUTAMIENTO
     // =================================================================================
-    const showAdminPanel = () => {
-        loginView.classList.add('hidden');
-        fichaView.classList.add('hidden');
-        adminPanel.classList.remove('hidden');
-        listenToBomberos();
-    };
-
-    const showLoginView = () => {
-        adminPanel.classList.add('hidden');
-        fichaView.classList.add('hidden');
-        loginView.classList.remove('hidden');
-    };
-
+    const showAdminPanel = () => { loadingView.classList.add('hidden'); loginView.classList.add('hidden'); fichaView.classList.add('hidden'); adminPanel.classList.remove('hidden'); listenToBomberos(); };
+    const showLoginView = () => { loadingView.classList.add('hidden'); adminPanel.classList.add('hidden'); fichaView.classList.add('hidden'); loginView.classList.remove('hidden'); };
     const showFichaView = async (bomberoId) => {
+        loadingView.classList.add('hidden');
         adminPanel.classList.add('hidden');
         loginView.classList.add('hidden');
         try {
@@ -283,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const main = () => {
         const params = new URLSearchParams(window.location.search);
         const bomberoId = params.get('id');
-
         if (bomberoId) {
             showFichaView(bomberoId);
         } else {
@@ -297,8 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Se ejecuta la función principal para iniciar la app.
     main();
-
 });
 
