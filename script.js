@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => notification.classList.remove('opacity-0', 'translate-x-10'), 10);
         setTimeout(() => {
             notification.classList.add('opacity-0', 'translate-x-10');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
+            setTimeout(() => notification.remove(), 6000); // Duración extendida para leer el error
+        }, 6000);
     };
 
     const confirmAction = (message) => {
@@ -191,7 +191,22 @@ document.addEventListener('DOMContentLoaded', () => {
             clearForm();
         } catch (error) {
             console.error("Error al guardar datos:", error);
-            showNotification('Hubo un error al guardar los datos.', true);
+            // *** INICIO DE LA MEJORA DE ERRORES ***
+            let userMessage = 'Hubo un error al guardar los datos.';
+            if (error.code) {
+                switch (error.code) {
+                    case 'storage/unauthorized':
+                        userMessage = 'Error de permisos al subir la foto. Revisa las reglas de Storage en Firebase.';
+                        break;
+                    case 'permission-denied':
+                        userMessage = 'Error de permisos al guardar los datos. Revisa las reglas de Firestore en Firebase.';
+                        break;
+                    default:
+                        userMessage = `Error inesperado: ${error.code}. Revisa la consola para más detalles.`;
+                }
+            }
+            showNotification(userMessage, true);
+            // *** FIN DE LA MEJORA DE ERRORES ***
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Guardar Datos';
