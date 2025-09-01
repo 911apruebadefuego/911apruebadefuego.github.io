@@ -3,8 +3,11 @@
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, deleteDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+// Importa la configuración de Firebase desde el nuevo archivo.
+import { firebaseConfig } from './firebase-config.js';
+
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -12,16 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // CONFIGURACIÓN PRINCIPAL DE LA APP
     // =================================================================================
     const PUBLIC_APP_URL = "https://911apruebadefuego.github.io/";
-    const firebaseConfig = {
-      apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
-      authDomain: "bomberos-jm-fichas.firebaseapp.com",
-      projectId: "bomberos-jm-fichas",
-      // CORRECCIÓN IMPORTANTE: Se ha verificado que esta sea la dirección correcta para el SDK.
-      storageBucket: "bomberos-jm-fichas.appspot.com", 
-      messagingSenderId: "847464331656",
-      appId: "1:847464331656:web:961de4993430f86e2ce23d"
-    };
-
+    
     let db, auth, storage;
     let bomberosCollectionRef;
 
@@ -33,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bomberosCollectionRef = collection(db, `bomberos-data`);
     } catch (e) {
         console.error("Error crítico inicializando Firebase:", e);
-        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. Revisa las claves en script.js.</p></div>`;
+        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. Revisa el archivo firebase-config.js.</p></div>`;
         return;
     }
 
@@ -62,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             notification.classList.add('opacity-0', 'translate-x-10');
             setTimeout(() => notification.remove(), 6000);
-        }, 6000);
+        }, 5000);
     };
 
     const confirmAction = (message) => {
@@ -131,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearForm = () => {
         bomberoForm.reset();
         bomberoIdField.value = '';
+        document.getElementById('fotoPerfil').value = '';
     };
     
     document.getElementById('clear-form-btn').addEventListener('click', clearForm);
@@ -143,10 +138,24 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.textContent = 'Guardando...';
 
         const id = bomberoIdField.value;
+        const dni = document.getElementById('dni').value.trim();
         const fotoFile = document.getElementById('fotoPerfil').files[0];
+
+        // MEJORA: Verificar si el DNI ya existe al crear un nuevo integrante
+        if (!id) {
+            const q = query(bomberosCollectionRef, where("dni", "==", dni));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                showNotification(`Error: Ya existe un integrante con el DNI ${dni}.`, true);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Guardar Datos';
+                return;
+            }
+        }
+        
         const bomberoData = {
             nombreCompleto: document.getElementById('nombreCompleto').value.trim(),
-            dni: document.getElementById('dni').value.trim(),
+            dni: dni,
             fechaNacimiento: document.getElementById('fechaNacimiento').value,
             grupoSanguineo: document.getElementById('grupoSanguineo').value.trim(),
             alergias: document.getElementById('alergias').value.trim(),
@@ -167,23 +176,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const oldDocSnap = await getDoc(docRef);
                 if (oldDocSnap.exists()) { oldImageUrl = oldDocSnap.data().imageUrl || null; }
             } else {
+                // Si es un nuevo bombero, crea una nueva referencia de documento
                 docRef = doc(bomberosCollectionRef);
             }
 
             if (fotoFile) {
-                const imagePath = `profile_images/${docRef.id}/${fotoFile.name}`;
+                // Borra la imagen anterior SOLO si se sube una nueva
+                if (oldImageUrl) {
+                    try { await deleteObject(ref(storage, oldImageUrl)); } catch (err) { console.warn("La imagen anterior no existía o no se pudo borrar:", err); }
+                }
+                const imagePath = `profile_images/${docRef.id}/${Date.now()}_${fotoFile.name}`;
                 const storageRef = ref(storage, imagePath);
                 const snapshot = await uploadBytes(storageRef, fotoFile);
                 bomberoData.imageUrl = await getDownloadURL(snapshot.ref);
-
-                if (oldImageUrl && oldImageUrl !== bomberoData.imageUrl) {
-                    try { await deleteObject(ref(storage, oldImageUrl)); } catch (err) { console.warn("No se pudo borrar la imagen anterior:", err); }
-                }
             } else if (id) {
+                // Si no se sube foto nueva al editar, se conserva la anterior
                 bomberoData.imageUrl = oldImageUrl;
             }
 
-            await setDoc(docRef, bomberoData);
+            await setDoc(docRef, bomberoData, { merge: true }); // Usar merge por si acaso
             showNotification('¡Datos guardados correctamente!');
             clearForm();
         } catch (error) {
@@ -216,14 +227,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const bomberoDocRef = doc(db, "bomberos-data", id);
 
         if (target.classList.contains('delete-btn')) {
-             if (await confirmAction('¿Estás seguro? Se borrarán los datos y la foto de perfil.')) {
+             if (await confirmAction('¿Estás seguro? Se borrarán los datos y la foto de perfil de este integrante.')) {
                 try {
                     const docSnap = await getDoc(bomberoDocRef);
                     if (docSnap.exists() && docSnap.data().imageUrl) {
-                        await deleteObject(ref(storage, docSnap.data().imageUrl));
+                        try {
+                           await deleteObject(ref(storage, docSnap.data().imageUrl));
+                        } catch(err) {
+                           console.warn("La foto a borrar no se encontró en Storage, puede que ya haya sido eliminada.", err);
+                        }
                     }
                     await deleteDoc(bomberoDocRef);
-                    showNotification('Integrante borrado.');
+                    showNotification('Integrante borrado correctamente.');
                 } catch (error) {
                     showNotification('No se pudo borrar al integrante.', true);
                     console.error("Error al borrar:", error);
@@ -245,8 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = `${PUBLIC_APP_URL.split('?')[0]}?id=${id}`;
             const qrcodeContainer = document.getElementById('qrcode');
             qrcodeContainer.innerHTML = '';
-            new QRCode(qrcodeContainer, { text: url, width: 256, height: 256 });
-            document.getElementById('qr-title').innerText = nombre;
+            new QRCode(qrcodeContainer, { text: url, width: 256, height: 256, colorDark : "#b91c1c", colorLight : "#ffffff" });
+            document.getElementById('qr-title').innerText = `Ficha de ${nombre}`;
             document.getElementById('qr-modal').style.display = 'flex';
         }
     });
@@ -284,11 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (docSnap.exists()) {
                 renderFicha(docSnap.data());
             } else {
-                bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Ficha no encontrada.</p>';
+                bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Ficha no encontrada o ha sido eliminada.</p>';
             }
         } catch (error) {
              console.error("Error al cargar la ficha:", error);
-             bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Error al cargar la ficha.</p>';
+             bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Error al cargar los datos de la ficha.</p>';
         } finally {
             fichaView.classList.remove('hidden');
         }
@@ -312,5 +327,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     main();
 });
-
-

@@ -1,66 +1,204 @@
 Ficha Médica QR - Bomberos
+
 Esta es una aplicación web para gestionar las fichas médicas de los integrantes de un cuartel de bomberos y generar códigos QR para un acceso rápido en caso de emergencia.
 
-La aplicación utiliza HTML, Tailwind CSS, y JavaScript, con Firebase como base de datos y sistema de autenticación.
+
+
+La aplicación utiliza HTML, Tailwind CSS, y JavaScript, con Firebase como base de datos, sistema de autenticación y almacenamiento de archivos.
+
+
 
 Estructura de Archivos
-index.html: Es la estructura principal de la página. Contiene el formulario de login y el panel de administración.
 
-style.css: Contiene algunos estilos personalizados para mejorar la responsividad de la aplicación.
+index.html: Estructura principal de la página.
 
-script.js: Contiene toda la lógica de la aplicación, incluyendo la conexión a Firebase, la autenticación de usuarios y la gestión de los datos de los bomberos.
+
+
+style.css: Estilos personalizados y utilidades.
+
+
+
+script.js: Toda la lógica de la aplicación (conexión a Firebase, autenticación, gestión de datos).
+
+
+
+firebase-config.js: (NUEVO Y PRIVADO) Archivo donde guardarás tus claves de Firebase. No debe subirse a GitHub.
+
+
+
+.gitignore: (NUEVO) Archivo que le indica a Git ignorar firebase-config.js.
+
+
 
 Puesta en Marcha (¡Importante!)
-Para que la aplicación funcione en tu página de GitHub (https://911apruebadefuego.github.io/), necesitas configurar correctamente tu proyecto de Firebase.
+
+Sigue estos pasos para que la aplicación funcione correctamente.
+
+
 
 Paso 1: Configuración del Proyecto en Firebase
-Si aún no lo has hecho, crea un proyecto en Firebase.
 
-Crear Base de Datos (Firestore):
+Crear Proyecto: Si aún no lo has hecho, crea un proyecto en la Consola de Firebase.
 
-En el menú, ve a Compilación > Firestore Database.
 
-Haz clic en Crear base de datos y elige una ubicación.
 
-Importante: Inicia en modo de producción.
+Añadir App Web: Dentro de tu proyecto, añade una nueva aplicación web (el icono </>). Dale un nombre y registra la aplicación.
 
-Configurar Autenticación:
+
+
+Obtener Configuración: Firebase te mostrará un objeto firebaseConfig. Copia estas claves.
+
+
+
+Crear firebase-config.js: En tu computadora, en la misma carpeta del proyecto, crea un archivo llamado firebase-config.js y pega dentro el siguiente contenido, reemplazando los valores con los que copiaste de Firebase:
+
+
+
+// Este archivo contiene la configuración de tu proyecto de Firebase.
+
+// ¡NUNCA subas este archivo a GitHub!
+
+
+
+export const firebaseConfig = {
+
+&nbsp; apiKey: "TU\_API\_KEY",
+
+&nbsp; authDomain: "TU\_AUTH\_DOMAIN",
+
+&nbsp; projectId: "TU\_PROJECT\_ID",
+
+&nbsp; storageBucket: "TU\_STORAGE\_BUCKET",
+
+&nbsp; messagingSenderId: "TU\_MESSAGING\_SENDER\_ID",
+
+&nbsp; appId: "TU\_APP\_ID"
+
+};
+
+
+
+Paso 2: Configurar Servicios de Firebase
+
+Authentication:
+
+
 
 Ve a Compilación > Authentication.
 
+
+
 En la pestaña Sign-in method, habilita el proveedor Correo electrónico/Contraseña.
 
-En la pestaña Settings > Dominios autorizados, asegúrate de que esté tu dominio 911apruebadefuego.github.io.
 
-Paso 2: Crear el Usuario Administrador
-En la sección de Authentication, ve a la pestaña Users.
 
-Haz clic en Añadir usuario.
+En la pestaña Settings > Dominios autorizados, añade el dominio donde se alojará tu app (ej: 911apruebadefuego.github.io).
 
-Ingresa el email y una contraseña segura que usarás para acceder al panel de administración.
 
-Paso 3: Actualizar las Reglas de Seguridad
-Estas reglas son cruciales para proteger tus datos, permitiendo que cualquiera pueda leer los QR pero que solo tú puedas modificar la información.
+
+Crea un usuario administrador desde la pestaña Users para poder iniciar sesión.
+
+
+
+Firestore Database:
+
+
 
 Ve a Compilación > Firestore Database.
 
-Selecciona la pestaña Reglas.
 
-Borra el contenido actual y pega estas nuevas reglas:
 
-rules_version = '2';
+Haz clic en Crear base de datos (inicia en modo de producción).
+
+
+
+Ve a la pestaña Reglas, borra el contenido y pega estas reglas:
+
+
+
+rules\_version = '2';
+
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // La colección de bomberos es de lectura pública para los QR,
-    // pero solo usuarios autenticados pueden escribir (crear, editar, borrar).
-    match /bomberos-data/{bomberoId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
+
+&nbsp; match /databases/{database}/documents {
+
+&nbsp;   // Lectura pública para los QR, escritura solo para administradores autenticados.
+
+&nbsp;   match /bomberos-data/{bomberoId} {
+
+&nbsp;     allow read: if true;
+
+&nbsp;     allow write: if request.auth != null;
+
+&nbsp;   }
+
+&nbsp; }
+
 }
+
+
 
 Haz clic en Publicar.
 
-Paso 4: Subir los archivos a GitHub
-Asegúrate de que los archivos index.html, style.css y script.js estén actualizados en tu repositorio de GitHub. Una vez subidos y con la configuración de Firebase lista, la aplicación funcionará correctamente con el nuevo sistema de inicio de sesión seguro.
+
+
+Storage:
+
+
+
+Ve a Compilación > Storage.
+
+
+
+Completa el asistente de configuración si es la primera vez.
+
+
+
+Ve a la pestaña Reglas, borra el contenido y pega estas reglas:
+
+
+
+rules\_version = '2';
+
+service firebase.storage {
+
+&nbsp; match /b/{bucket}/o {
+
+&nbsp;   // Permite la lectura pública de las fotos de perfil.
+
+&nbsp;   match /profile\_images/{bomberoId}/{allPaths=\*\*} {
+
+&nbsp;     allow read: if true;
+
+&nbsp;   }
+
+&nbsp;   // Permite la escritura (subir/borrar fotos) solo a administradores autenticados.
+
+&nbsp;   match /profile\_images/{bomberoId}/{allPaths=\*\*} {
+
+&nbsp;     allow write: if request.auth != null;
+
+&nbsp;   }
+
+&nbsp; }
+
+}
+
+
+
+Haz clic en Publicar.
+
+
+
+Paso 3: Subir los archivos a GitHub
+
+Asegúrate de tener todos los archivos (index.html, style.css, script.js, .gitignore) en tu repositorio.
+
+
+
+MUY IMPORTANTE: Verifica que el archivo firebase-config.js NO se suba a GitHub. El archivo .gitignore se encargará de esto.
+
+
+
+Sube los cambios a tu repositorio. Una vez desplegado, la aplicación funcionará de forma segura.
+

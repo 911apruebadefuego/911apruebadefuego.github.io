@@ -2,47 +2,24 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: #f8fafc;
 }
-.printable-qr {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.8);
-    z-index: 1000;
-    justify-content: center;
-    align-items: center;
+
+/* Estilos para el formulario en el panel de admin */
+.form-input {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition;
 }
-.printable-qr-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 1rem;
-    text-align: center;
-    position: relative;
+
+/* Animaciones para modales y notificaciones */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
 }
-.close-button {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 24px;
-    font-weight: bold;
-    cursor: pointer;
-}
- @media print {
-    body * {
-        visibility: hidden;
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
     }
-    .printable-area, .printable-area * {
-        visibility: visible;
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
-    .printable-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-     .no-print {
-         display: none;
-     }
 }
