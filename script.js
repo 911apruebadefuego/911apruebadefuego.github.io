@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
       apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
       authDomain: "bomberos-jm-fichas.firebaseapp.com",
       projectId: "bomberos-jm-fichas",
-      // ESTA ES LA LÍNEA CORREGIDA Y CORRECTA:
+      // CORRECCIÓN IMPORTANTE: Se ha verificado que esta sea la dirección correcta para el SDK.
       storageBucket: "bomberos-jm-fichas.appspot.com", 
       messagingSenderId: "847464331656",
       appId: "1:847464331656:web:961de4993430f86e2ce23d"
@@ -24,10 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let db, auth, storage;
     let bomberosCollectionRef;
-    // ... (el resto del código sigue igual)
-    // =================================================================================
-    // (El resto del script.js no cambia y se omite por brevedad)
-    // =================================================================================
+
     try {
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
@@ -40,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // =================================================================================
+    // ELEMENTOS DEL DOM Y HELPERS DE UI
+    // =================================================================================
     const loadingView = document.getElementById('loading-view');
     const loginView = document.getElementById('login-view');
     const loginForm = document.getElementById('login-form');
@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // =================================================================================
+    // LÓGICA DE LA APLICACIÓN
+    // =================================================================================
     const renderFicha = (data) => {
         const imageUrl = data.imageUrl || 'https://placehold.co/150x150/e0e0e0/757575?text=S/F';
         bomberoDataContainer.innerHTML = `
