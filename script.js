@@ -2,7 +2,7 @@
 // IMPORTACIONES DE FIREBASE
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // =================================================================================
@@ -279,18 +279,12 @@ const main = () => {
     const bomberoId = params.get('id');
 
     if (bomberoId) {
-        // Es una vista pública de QR. Se usa sesión anónima para leer.
-        signInAnonymously(auth).then(() => {
-            showFichaView(bomberoId);
-        }).catch(error => {
-            console.error("Error en login anónimo para QR:", error);
-            bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">No se pudo autenticar para ver la ficha.</p>';
-            fichaView.classList.remove('hidden');
-        });
+        // Es una vista pública de QR. Se muestra la ficha directamente.
+        showFichaView(bomberoId);
     } else {
         // Es la página principal, chequear si el admin está logueado.
         onAuthStateChanged(auth, (user) => {
-            if (user && !user.isAnonymous) { // Asegurarse que no sea el usuario anónimo del QR
+            if (user && !user.isAnonymous) {
                 showAdminPanel();
             } else {
                 showLoginView();
@@ -299,5 +293,5 @@ const main = () => {
     }
 };
 
-main();
-
+// Se ejecuta la función principal solo cuando el DOM está completamente cargado.
+document.addEventListener('DOMContentLoaded', main);
