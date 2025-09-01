@@ -1,58 +1,12 @@
-Ficha Médica QR - Bomberos Voluntarios
-Esta es una aplicación web diseñada para gestionar las fichas médicas de los integrantes de un cuartel de bomberos. Permite cargar datos médicos relevantes y generar un código QR único para cada integrante, facilitando el acceso rápido a su información en caso de una emergencia.
-
-Características
-Gestión de Fichas: Formulario completo para añadir y editar la información médica de cada bombero (datos personales, alergias, medicación, contacto de emergencia, etc.).
-
-Base de Datos en Tiempo Real: Utiliza Firebase Firestore para almacenar los datos de forma segura y sincronizada.
-
-Generación de Códigos QR: Crea un código QR único para cada ficha, que enlaza a una vista simplificada y de fácil lectura en dispositivos móviles.
-
-Interfaz Limpia: Diseño claro y funcional utilizando TailwindCSS.
-
-Tecnologías Utilizadas
-HTML5
-
-CSS3 (con TailwindCSS)
-
-JavaScript (ESM - Módulos)
-
-Firebase Firestore (Base de datos)
-
-qrcode.js (Generación de QR)
-
-Publicación en GitHub Pages
-Para que la aplicación funcione en la URL https://911apruebadefuego.github.io/, sigue estos pasos:
-
-1. Requisitos
-Una cuenta de GitHub.
-
-El usuario de GitHub debe ser 911apruebadefuego.
-
-2. Creación del Repositorio
-Es crucial que el repositorio tenga un nombre específico para que GitHub Pages lo sirva desde la raíz de tu dominio de usuario.
-
-Crea un nuevo repositorio en GitHub con el nombre exacto: 911apruebadefuego.github.io.
-
-3. Subir los Archivos
-Sube los tres archivos de este proyecto (index.html, style.css y script.js) a la raíz de tu nuevo repositorio.
-
-4. Configurar GitHub Pages
-Ve a la pestaña "Settings" de tu repositorio.
-
-En el menú de la izquierda, selecciona "Pages".
-
-En la sección "Build and deployment", bajo "Source", asegúrate de que esté seleccionada la opción "Deploy from a branch".
-
-En la sección "Branch", selecciona la rama main (o master) y la carpeta / (root).
-
-Haz clic en "Save".
-
-GitHub tardará unos minutos en construir y desplegar tu sitio. Una vez que termine, tu aplicación estará disponible públicamente en https://911apruebadefuego.github.io/.
-
-5. Configuración de la URL en el Código
-El archivo script.js ya está configurado para usar esta URL. La siguiente constante es la que define la dirección a la que apuntarán los códigos QR:
-
-const PUBLIC_APP_URL = "[https://911apruebadefuego.github.io/](https://911apruebadefuego.github.io/)";
-
-Si en el futuro decides cambiar la URL, solo necesitas modificar esta línea en script.js y volver a subir el archivo al repositorio.
+Ficha Médica QR - BomberosEsta es una aplicación web para gestionar las fichas médicas de los integrantes de un cuartel de bomberos y generar códigos QR para un acceso rápido en caso de emergencia.La aplicación utiliza HTML, Tailwind CSS, y JavaScript, con Firebase como base de datos y sistema de autenticación.Estructura de Archivosindex.html: Es la estructura principal de la página. Contiene el formulario de login y el panel de administración.style.css: Contiene algunos estilos personalizados para mejorar la responsividad de la aplicación.script.js: Contiene toda la lógica de la aplicación, incluyendo la conexión a Firebase, la autenticación de usuarios y la gestión de los datos de los bomberos.Puesta en Marcha (¡Importante!)Para que la aplicación funcione en tu página de GitHub (https://911apruebadefuego.github.io/), necesitas configurar tu proyecto de Firebase.Paso 1: Configuración del Proyecto en FirebaseSi aún no lo has hecho, crea un proyecto en Firebase.Crear Base de Datos (Firestore):En el menú, ve a Compilación > Firestore Database.Haz clic en Crear base de datos y elige la ubicación.Importante: Inicia en modo de producción.Configurar Autenticación:Ve a Compilación > Authentication.En la pestaña Sign-in method, habilita dos proveedores:Correo electrónico/Contraseña.Anónimo (esto es para que los QR puedan ser leídos por cualquiera).En la pestaña Settings > Dominios autorizados, asegúrate de que esté tu dominio 911apruebadefuego.github.io.Paso 2: Crear el Usuario AdministradorEn la sección de Authentication, ve a la pestaña Users.Haz clic en Añadir usuario.Ingresa el email y una contraseña segura que usarás para acceder al panel de administración.Paso 3: Actualizar las Reglas de SeguridadEstas reglas son cruciales para proteger tus datos.Ve a Compilación > Firestore Database.Selecciona la pestaña Reglas.Borra el contenido y pega estas nuevas reglas:rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // La colección de bomberos es de lectura pública para los QR,
+    // pero solo usuarios autenticados (no anónimos) pueden escribir.
+    match /bomberos-data/{bomberoId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+  }
+}
+Haz clic en Publicar.Paso 4: Subir los archivos a GitHubAsegúrate de que los archivos index.html, style.css y script.js de esta versión estén en tu repositorio de GitHub. Una vez subidos, la aplicación debería funcionar correctamente con el nuevo sistema de inicio de sesión.

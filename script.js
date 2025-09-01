@@ -2,7 +2,7 @@
 // IMPORTACIONES DE FIREBASE
 // =================================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // =================================================================================
@@ -13,8 +13,6 @@ import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, addDoc, dele
 const PUBLIC_APP_URL = "https://911apruebadefuego.github.io/";
 
 // --- Configuración de Firebase ---
-// IMPORTANTE: REEMPLAZA ESTE BLOQUE con el objeto de configuración que copiaste 
-// desde tu Consola de Firebase.
 const firebaseConfig = {
   apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
   authDomain: "bomberos-jm-fichas.firebaseapp.com",
@@ -24,33 +22,26 @@ const firebaseConfig = {
   appId: "1:847464331656:web:961de4993430f86e2ce23d"
 };
 
-// Este es un identificador único para tu aplicación dentro de la base de datos. Puedes dejarlo así.
-const appId = 'bomberos-jesus-maria-qr';
-
 let db, auth;
 let bomberosCollectionRef;
 
 try {
-    // Verifica que las claves no sean las de ejemplo
-    if (firebaseConfig.apiKey === "TU_API_KEY_AQUI") {
-        throw new Error("Las claves de Firebase no han sido configuradas.");
-    }
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     auth = getAuth(app);
-    // La ruta de la base de datos ahora es más simple para una app pública
     bomberosCollectionRef = collection(db, `bomberos-data`);
 } catch (e) {
     console.error("Error crítico inicializando Firebase:", e);
-    const adminPanel = document.getElementById('admin-panel');
-    adminPanel.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. La aplicación no puede funcionar. Revisa que las claves en script.js sean correctas y no las de ejemplo.</p></div>`;
-    adminPanel.classList.remove('hidden');
+    document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. La aplicación no puede funcionar. Revisa que las claves en script.js sean correctas.</p></div>`;
 }
 
 // =================================================================================
 // ELEMENTOS DEL DOM Y HELPERS DE UI
 // =================================================================================
+const loginView = document.getElementById('login-view');
+const loginForm = document.getElementById('login-form');
 const adminPanel = document.getElementById('admin-panel');
+const logoutBtn = document.getElementById('logout-btn');
 const fichaView = document.getElementById('ficha-view');
 const bomberoDataContainer = document.getElementById('bombero-data');
 const bomberoForm = document.getElementById('bombero-form');
@@ -110,8 +101,6 @@ const renderFicha = (data) => {
         { label: 'Observaciones', value: data.observaciones || 'Sin observaciones', full: true },
     ];
     bomberoDataContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">${fields.map(field => `<div class="py-3 border-b border-gray-200 ${field.full ? 'md:col-span-2' : ''}"><p class="text-sm font-medium text-gray-500">${field.label}</p><p class="text-lg ${field.bold ? 'font-bold' : ''} ${field.important ? 'text-red-600 font-semibold' : 'text-gray-900'}">${field.value || 'No especificado'}</p></div>`).join('')}</div>`;
-    fichaView.classList.remove('hidden');
-    adminPanel.classList.add('hidden');
 };
 
 const listenToBomberos = () => {
@@ -214,44 +203,101 @@ bomberosListContainer.addEventListener('click', async (e) => {
     }
 });
 
+
+// =================================================================================
+// LÓGICA DE AUTENTICACIÓN
+// =================================================================================
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = loginForm.email.value;
+    const password = loginForm.password.value;
+    const submitButton = loginForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Ingresando...';
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // El onAuthStateChanged se encargará de mostrar el panel
+    } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+        showNotification('Error: Email o contraseña incorrectos.', true);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Ingresar';
+    }
+});
+
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await signOut(auth);
+        showNotification('Has cerrado la sesión.');
+        // El onAuthStateChanged se encargará de mostrar el login
+    } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+        showNotification('No se pudo cerrar la sesión.', true);
+    }
+});
+
 // =================================================================================
 // INICIALIZACIÓN Y ENRUTAMIENTO
 // =================================================================================
-const router = async () => {
-    const params = new URLSearchParams(window.location.search);
-    const bomberoId = params.get('id');
-    if (bomberoId) {
-        try {
-            const docRef = doc(db, "bomberos-data", bomberoId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) renderFicha(docSnap.data());
-            else {
-                bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Ficha no encontrada.</p>';
-                fichaView.classList.remove('hidden');
-            }
-        } catch (error) {
-             bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Error al cargar la ficha.</p>';
-             fichaView.classList.remove('hidden');
+const showAdminPanel = () => {
+    loginView.classList.add('hidden');
+    fichaView.classList.add('hidden');
+    adminPanel.classList.remove('hidden');
+    listenToBomberos();
+};
+
+const showLoginView = () => {
+    adminPanel.classList.add('hidden');
+    fichaView.classList.add('hidden');
+    loginView.classList.remove('hidden');
+};
+
+const showFichaView = async (bomberoId) => {
+    adminPanel.classList.add('hidden');
+    loginView.classList.add('hidden');
+    try {
+        const docRef = doc(db, "bomberos-data", bomberoId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            renderFicha(docSnap.data());
+        } else {
+            bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Ficha no encontrada.</p>';
         }
-    } else {
-        adminPanel.classList.remove('hidden');
-        fichaView.classList.add('hidden');
-        listenToBomberos();
+    } catch (error) {
+         bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">Error al cargar la ficha.</p>';
+    } finally {
+        fichaView.classList.remove('hidden');
     }
 };
 
-const main = async () => {
-    if (!db || !auth) return;
-    try {
-        await signInAnonymously(auth);
-        router();
-    } catch (error) {
-        console.error("Error de autenticación:", error);
-        adminPanel.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg"><p class="text-red-600 text-center font-semibold">Error de autenticación. La aplicación no puede funcionar.</p></div>`;
-        adminPanel.classList.remove('hidden');
+const main = () => {
+    if (!auth) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const bomberoId = params.get('id');
+
+    if (bomberoId) {
+        // Es una vista pública de QR. Se usa sesión anónima para leer.
+        signInAnonymously(auth).then(() => {
+            showFichaView(bomberoId);
+        }).catch(error => {
+            console.error("Error en login anónimo para QR:", error);
+            bomberoDataContainer.innerHTML = '<p class="text-center text-red-500 text-xl">No se pudo autenticar para ver la ficha.</p>';
+            fichaView.classList.remove('hidden');
+        });
+    } else {
+        // Es la página principal, chequear si el admin está logueado.
+        onAuthStateChanged(auth, (user) => {
+            if (user && !user.isAnonymous) { // Asegurarse que no sea el usuario anónimo del QR
+                showAdminPanel();
+            } else {
+                showLoginView();
+            }
+        });
     }
 };
 
 main();
-
 
