@@ -172,8 +172,27 @@
     <!-- Área de Notificaciones -->
     <div id="notification-area" class="fixed bottom-5 right-5 z-50"></div>
     
-    <!-- CORRECCIÓN: Cargar la configuración antes del script principal -->
-    <script type="module" src="firebase-config.js"></script>
+    <!--
+    ==================================================================
+    PASO 1: CONFIGURACIÓN DE FIREBASE
+    Pega aquí tu objeto de configuración de Firebase.
+    Lo encuentras en tu consola de Firebase > Configuración del Proyecto.
+    ==================================================================
+    -->
+    <script>
+        // REEMPLAZA ESTO CON TU PROPIA CONFIGURACIÓN DE FIREBASE
+        const firebaseConfig = {
+          apiKey: "AIzaSyAGQ7LfHVBT4zJIAGzjliRDHw_XscyfBis",
+  authDomain: "bomberos-jm-fichas.firebaseapp.com",
+  projectId: "bomberos-jm-fichas",
+  storageBucket: "bomberos-jm-fichas.firebasestorage.app",
+  messagingSenderId: "847464331656",
+  appId: "1:847464331656:web:961de4993430f86e2ce23d"
+        };
+    </script>
+
+    <!-- Carga del script principal de la aplicación -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
+

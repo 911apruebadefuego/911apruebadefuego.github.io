@@ -5,16 +5,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, onSnapshot, setDoc, deleteDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-// Importa la configuración de Firebase desde el nuevo archivo.
-import { firebaseConfig } from './firebase-config.js';
-
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // =================================================================================
-    // CONFIGURACIÓN PRINCIPAL DE LA APP
+    // CONFIGURACIÓN Y VALIDACIÓN INICIAL
     // =================================================================================
     const PUBLIC_APP_URL = "https://911apruebadefuego.github.io/";
+
+    // Se comprueba que el objeto firebaseConfig exista y haya sido modificado.
+    // Este objeto ahora se define en un tag <script> en index.html.
+    if (typeof firebaseConfig === 'undefined' || firebaseConfig.apiKey.startsWith("TU_API_KEY")) {
+        console.error("Error crítico: La configuración de Firebase no está definida o no ha sido actualizada en index.html.");
+        document.body.innerHTML = `<div class="p-4 md:p-8 m-auto max-w-2xl">
+            <div class="bg-white p-8 rounded-2xl shadow-lg text-center">
+                <h2 class="text-2xl font-bold text-red-700 mb-4">Error de Configuración</h2>
+                <p class="text-gray-700">La aplicación no puede iniciarse.</p>
+                <p class="mt-2 text-gray-600">Por favor, abre el archivo <code>index.html</code> y completa el objeto <code>firebaseConfig</code> con tus claves de Firebase para que la aplicación pueda funcionar.</p>
+            </div>
+        </div>`;
+        return;
+    }
     
     let db, auth, storage;
     let bomberosCollectionRef;
@@ -27,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bomberosCollectionRef = collection(db, `bomberos-data`);
     } catch (e) {
         console.error("Error crítico inicializando Firebase:", e);
-        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error de configuración de Firebase. Revisa el archivo firebase-config.js.</p></div>`;
+        document.body.innerHTML = `<div class="bg-white p-8 rounded-2xl shadow-lg m-10"><p class="text-red-600 text-center font-semibold">Error al inicializar Firebase. Revisa que las claves en index.html sean correctas.</p></div>`;
         return;
     }
 
@@ -55,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => notification.classList.remove('opacity-0', 'translate-x-10'), 10);
         setTimeout(() => {
             notification.classList.add('opacity-0', 'translate-x-10');
-            setTimeout(() => notification.remove(), 6000);
+            setTimeout(() => notification.remove(), 5000);
         }, 5000);
     };
 
@@ -141,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const dni = document.getElementById('dni').value.trim();
         const fotoFile = document.getElementById('fotoPerfil').files[0];
 
-        // MEJORA: Verificar si el DNI ya existe al crear un nuevo integrante
         if (!id) {
             const q = query(bomberosCollectionRef, where("dni", "==", dni));
             const querySnapshot = await getDocs(q);
@@ -176,12 +186,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const oldDocSnap = await getDoc(docRef);
                 if (oldDocSnap.exists()) { oldImageUrl = oldDocSnap.data().imageUrl || null; }
             } else {
-                // Si es un nuevo bombero, crea una nueva referencia de documento
                 docRef = doc(bomberosCollectionRef);
             }
 
             if (fotoFile) {
-                // Borra la imagen anterior SOLO si se sube una nueva
                 if (oldImageUrl) {
                     try { await deleteObject(ref(storage, oldImageUrl)); } catch (err) { console.warn("La imagen anterior no existía o no se pudo borrar:", err); }
                 }
@@ -190,11 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const snapshot = await uploadBytes(storageRef, fotoFile);
                 bomberoData.imageUrl = await getDownloadURL(snapshot.ref);
             } else if (id) {
-                // Si no se sube foto nueva al editar, se conserva la anterior
                 bomberoData.imageUrl = oldImageUrl;
             }
 
-            await setDoc(docRef, bomberoData, { merge: true }); // Usar merge por si acaso
+            await setDoc(docRef, bomberoData, { merge: true });
             showNotification('¡Datos guardados correctamente!');
             clearForm();
         } catch (error) {
@@ -327,3 +334,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     main();
 });
+
